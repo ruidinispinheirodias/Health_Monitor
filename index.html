@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitor de Dados Vitais</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    #dados { margin-top: 20px; }
+    .dado { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Dados Vitais em Tempo Real</h1>
+  <div id="dados">
+    <div class="dado">Frequência Cardíaca: <span id="fc">--</span> bpm</div>
+    <div class="dado">SpO₂: <span id="spo2">--</span> %</div>
+    <div class="dado">ECG: <span id="ecg">--</span></div>
+  </div>
+
+  <script>
+    const endpoint = "https://healthmonitor-production.up.railway.app/vitais"; // Substitui pelo teu endpoint real
+
+    async function atualizarDados() {
+      try {
+        const resposta = await fetch(endpoint);
+        if (!resposta.ok) {
+          throw new Error(`Erro na requisição: ${resposta.status}`);
+        }
+        const dados = await resposta.json();
+        document.getElementById("fc").textContent = dados.fc ?? "--";
+        document.getElementById("spo2").textContent = dados.spo2 ?? "--";
+        document.getElementById("ecg").textContent = dados.ecg ?? "--";
+      } catch (erro) {
+        console.error("Erro ao buscar dados:", erro);
+      }
+    }
+
+    // Atualiza os dados a cada 1 segundo
+    setInterval(atualizarDados, 1000);
+
+    // Atualiza os dados imediatamente ao carregar a página
+    atualizarDados();
+  </script>
+</body>
+</html>
