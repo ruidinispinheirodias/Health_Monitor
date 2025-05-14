@@ -18,6 +18,10 @@ app.get("/vitais", (req, res) => {
   res.json(dadosVitais);
 });
 
+app.get("/", (req, res) => {
+  res.send("API de dados vitais em funcionamento. Utilize /vitais para interagir.");
+});
+
 app.listen(port, () => {
   console.log(`Servidor a correr em http://localhost:${port}`);
 });
