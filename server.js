@@ -1,27 +1,34 @@
-const express = require("express");
-const cors = require("cors");
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
+
 const app = express();
-const port = process.env.PORT || 3000;
+const server = http.createServer(app);
 
-app.use(cors());
-app.use(express.json());
+const wss = new WebSocket.Server({ server, path: '/frontend' });
 
-let dadosVitais = {};
+let clients = new Set();
 
-app.post("/vitais", (req, res) => {
-  dadosVitais = req.body;
-  console.log("Dados recebidos:", dadosVitais);
-  res.status(200).json({ mensagem: "Dados recebidos com sucesso" });
+wss.on('connection', ws => {
+  console.log('Cliente WebSocket conectado');
+  clients.add(ws);
+
+  ws.on('message', message => {
+    console.log('Dados recebidos do ESP32:', message);
+
+    // Retransmitir para todos os clientes (frontend)
+    clients.forEach(client => {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  });
+
+  ws.on('close', () => {
+    clients.delete(ws);
+    console.log('Cliente desconectado');
+  });
 });
 
-app.get("/vitais", (req, res) => {
-  res.json(dadosVitais);
-});
-
-app.get("/", (req, res) => {
-  res.send("API de dados vitais em funcionamento. Utilize /vitais para interagir.");
-});
-
-app.listen(port, () => {
-  console.log(`Servidor a correr em http://localhost:${port}`);
-});
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Servidor a correr na porta ${PORT}`));
