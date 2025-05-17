@@ -1,46 +1,129 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <meta charset="UTF-8">
-  <title>Monitor de Dados Vitais</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Monitorização de Utentes</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #333; }
-    #dados { margin-top: 20px; }
-    .dado { margin-bottom: 10px; }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f5f7;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #0747a6;
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #ebecf0;
+      color: #172b4d;
+    }
+
+    .status-normal {
+      color: #006644;
+      background-color: #e3fcef;
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .status-alerta {
+      color: #ff991f;
+      background-color: #fff0b3;
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .status-perigo {
+      color: #de350b;
+      background-color: #ffebe6;
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
-  <h1>Dados Vitais em Tempo Real</h1>
-  <div id="dados">
-    <div class="dado">Frequência Cardíaca: <span id="fc">--</span> bpm</div>
-    <div class="dado">SpO₂: <span id="spo2">--</span> %</div>
-    <div class="dado">ECG: <span id="ecg">--</span></div>
-  </div>
+  <h1>Painel de Saúde - Monitorização em Tempo Real</h1>
+  <table id="tabela-utentes">
+    <thead>
+      <tr>
+        <th>Nome do Utente</th>
+        <th>Frequência Cardíaca (FC)</th>
+        <th>SpO₂ (%)</th>
+        <th>ECG</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dados vão ser inseridos aqui dinamicamente -->
+    </tbody>
+  </table>
 
   <script>
-    const endpoint = "https://healthmonitor-production.up.railway.app/vitais"; // Substitui pelo teu endpoint real
-
-    async function atualizarDados() {
-      try {
-        const resposta = await fetch(endpoint);
-        if (!resposta.ok) {
-          throw new Error(`Erro na requisição: ${resposta.status}`);
-        }
-        const dados = await resposta.json();
-        document.getElementById("fc").textContent = dados.fc ?? "--";
-        document.getElementById("spo2").textContent = dados.spo2 ?? "--";
-        document.getElementById("ecg").textContent = dados.ecg ?? "--";
-      } catch (erro) {
-        console.error("Erro ao buscar dados:", erro);
+    function avaliarEstado(fc, spo2, ecg) {
+      if (fc < 60 || fc > 100 || spo2 < 94 || ecg < 400 || ecg > 600) {
+        return 'perigo';
+      } else if ((fc >= 95 && fc <= 100) || spo2 < 96) {
+        return 'alerta';
+      } else {
+        return 'normal';
       }
     }
 
-    // Atualiza os dados a cada 1 segundo
-    setInterval(atualizarDados, 1000);
+    function gerarLinha(nome, fc, spo2, ecg) {
+      const estado = avaliarEstado(fc, spo2, ecg);
+      let classe = estado === 'normal' ? 'status-normal' :
+                   estado === 'alerta' ? 'status-alerta' : 'status-perigo';
 
-    // Atualiza os dados imediatamente ao carregar a página
-    atualizarDados();
+      return `
+        <tr>
+          <td>${nome}</td>
+          <td>${fc}</td>
+          <td>${spo2}</td>
+          <td>${ecg}</td>
+          <td><span class="${classe}">${estado.toUpperCase()}</span></td>
+        </tr>
+      `;
+    }
+
+    async function atualizarTabela() {
+      const resposta = await fetch('https://healthmonitor-production.up.railway.app/vitais');
+      const dados = await resposta.json();
+
+      const tabela = document.querySelector('#tabela-utentes tbody');
+      tabela.innerHTML = ''; // limpar linhas
+
+      // Supondo que o backend já retorna uma lista com nome, fc, spo2, ecg
+      dados.forEach(utente => {
+        tabela.innerHTML += gerarLinha(
+          utente.nome || 'Utente 1',
+          utente.fc,
+          utente.spo2,
+          utente.ecg
+        );
+      });
+    }
+
+    setInterval(atualizarTabela, 1000); // Atualiza a cada segundo
+    atualizarTabela(); // Chamada inicial
   </script>
 </body>
 </html>
