@@ -76,54 +76,69 @@
       <!-- Dados vão ser inseridos aqui dinamicamente -->
     </tbody>
   </table>
+  
+<script>
+  // Função gerarLinha permanece igual
+  function avaliarEstado(fc, spo2, ecg) {
+    if (fc < 60 || fc > 100 || spo2 < 94 || ecg < 400 || ecg > 600) {
+      return 'perigo';
+    } else if ((fc >= 95 && fc <= 100) || spo2 < 96) {
+      return 'alerta';
+    } else {
+      return 'normal';
+    }
+  }
 
-  <script>
-    function avaliarEstado(fc, spo2, ecg) {
-      if (fc < 60 || fc > 100 || spo2 < 94 || ecg < 400 || ecg > 600) {
-        return 'perigo';
-      } else if ((fc >= 95 && fc <= 100) || spo2 < 96) {
-        return 'alerta';
+  function gerarLinha(nome, fc, spo2, ecg) {
+    const estado = avaliarEstado(fc, spo2, ecg);
+    let classe = estado === 'normal' ? 'status-normal' :
+                 estado === 'alerta' ? 'status-alerta' : 'status-perigo';
+
+    return `
+      <tr>
+        <td>${nome}</td>
+        <td>${fc}</td>
+        <td>${spo2}</td>
+        <td>${ecg}</td>
+        <td><span class="${classe}">${estado.toUpperCase()}</span></td>
+      </tr>
+    `;
+  }
+
+  // WebSocket real-time
+  const tabelaCorpo = document.querySelector('#tabela-utentes tbody');
+  const ws = new WebSocket("ws://<TEU_SERVIDOR>:3000/frontend");
+
+  ws.onopen = () => console.log('WebSocket conectado');
+  ws.onerror = error => console.error('WebSocket erro:', error);
+
+  ws.onmessage = event => {
+    try {
+      const dados = JSON.parse(event.data);
+      tabelaCorpo.innerHTML = '';
+
+      if (Array.isArray(dados)) {
+        dados.forEach(utente => {
+          tabelaCorpo.innerHTML += gerarLinha(
+            utente.nome || `Utente ${utente.id || '?'}`,
+            utente.fc,
+            utente.spo2,
+            utente.ecg
+          );
+        });
       } else {
-        return 'normal';
-      }
-    }
-
-    function gerarLinha(nome, fc, spo2, ecg) {
-      const estado = avaliarEstado(fc, spo2, ecg);
-      let classe = estado === 'normal' ? 'status-normal' :
-                   estado === 'alerta' ? 'status-alerta' : 'status-perigo';
-
-      return `
-        <tr>
-          <td>${nome}</td>
-          <td>${fc}</td>
-          <td>${spo2}</td>
-          <td>${ecg}</td>
-          <td><span class="${classe}">${estado.toUpperCase()}</span></td>
-        </tr>
-      `;
-    }
-
-    async function atualizarTabela() {
-      const resposta = await fetch('https://healthmonitor-production.up.railway.app/vitais');
-      const dados = await resposta.json();
-
-      const tabela = document.querySelector('#tabela-utentes tbody');
-      tabela.innerHTML = ''; // limpar linhas
-
-      // Supondo que o backend já retorna uma lista com nome, fc, spo2, ecg
-      dados.forEach(utente => {
-        tabela.innerHTML += gerarLinha(
-          utente.nome || 'Utente 1',
-          utente.fc,
-          utente.spo2,
-          utente.ecg
+        tabelaCorpo.innerHTML += gerarLinha(
+          dados.nome || `Utente ${dados.id || '?'}`,
+          dados.fc,
+          dados.spo2,
+          dados.ecg
         );
-      });
+      }
+    } catch(e) {
+      console.error('Erro a processar dados:', e);
     }
-
-    setInterval(atualizarTabela, 1000); // Atualiza a cada segundo
-    atualizarTabela(); // Chamada inicial
-  </script>
+  };
+</script>
+  
 </body>
 </html>
