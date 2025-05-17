@@ -107,7 +107,7 @@
 
   // WebSocket real-time
   const tabelaCorpo = document.querySelector('#tabela-utentes tbody');
-  const ws = new WebSocket("ws://<TEU_SERVIDOR>:3000/frontend");
+  const ws = new WebSocket("wss://healthmonitor-production.up.railway.app/frontend");
 
   ws.onopen = () => console.log('WebSocket conectado');
   ws.onerror = error => console.error('WebSocket erro:', error);
