@@ -112,32 +112,40 @@
   ws.onopen = () => console.log('WebSocket conectado');
   ws.onerror = error => console.error('WebSocket erro:', error);
 
-  ws.onmessage = event => {
-    try {
-      const dados = JSON.parse(event.data);
-      tabelaCorpo.innerHTML = '';
+ws.onmessage = event => {
+  try {
+    const dados = JSON.parse(event.data);
 
-      if (Array.isArray(dados)) {
-        dados.forEach(utente => {
-          tabelaCorpo.innerHTML += gerarLinha(
-            utente.nome || `Utente ${utente.id || '?'}`,
-            utente.fc,
-            utente.spo2,
-            utente.ecg
-          );
-        });
-      } else {
-        tabelaCorpo.innerHTML += gerarLinha(
-          dados.nome || `Utente ${dados.id || '?'}`,
-          dados.fc,
-          dados.spo2,
-          dados.ecg
-        );
-      }
-    } catch(e) {
-      console.error('Erro a processar dados:', e);
+    // If you expect an array of patients:
+    if (Array.isArray(dados)) {
+      dados.forEach(utente => updateOrAddRow(utente));
+    } else {
+      // Single patient data
+      updateOrAddRow(dados);
     }
-  };
+  } catch(e) {
+    console.error('Erro a processar dados:', e);
+  }
+};
+
+function updateOrAddRow(utente) {
+  // Try to find existing row by patient ID or name
+  let row = [...tabelaCorpo.rows].find(r => r.dataset.id === utente.id);
+
+  if (!row) {
+    // Create new row if doesn't exist
+    row = document.createElement('tr');
+    row.dataset.id = utente.id; // store id for lookup
+    tabelaCorpo.appendChild(row);
+  }
+
+  row.innerHTML = gerarLinha(
+    utente.nome || `Utente ${utente.id || '?'}`,
+    utente.fc,
+    utente.spo2,
+    utente.ecg
+  );
+}
 </script>
   
 </body>
