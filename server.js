@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server, path: '/frontend' });
 
 // Connect to MQTT broker (use your MQTT broker URL)
 const mqttClient = mqtt.connect("mqtt://test.mosquitto.org");
